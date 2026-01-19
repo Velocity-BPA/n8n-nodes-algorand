@@ -1,0 +1,23 @@
+# Source files
+nodes/
+credentials/
+index.ts
+
+# Config files
+tsconfig.json
+.eslintrc.js
+.prettierrc
+.gitignore
+
+# Development
+test/
+scripts/
+coverage/
+
+# IDE
+.idea/
+.vscode/
+
+# Misc
+*.log
+*.tgz
