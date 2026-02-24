@@ -8,29 +8,31 @@
 >
 > For licensing information, visit https://velobpa.com/licensing or contact licensing@velobpa.com.
 
-A comprehensive n8n community node for interacting with the **Algorand blockchain**. This package provides extensive support for Algorand Standard Assets (ASAs), NFTs (ARC-3/ARC-69), Smart Contracts, Atomic Transfers, and more.
+This n8n community node provides comprehensive integration with the Algorand blockchain, implementing 6 core resources (Accounts, Transactions, Assets, Applications, Blocks, Status) to enable automated workflows for blockchain operations, asset management, smart contract interactions, and network monitoring.
 
-![Algorand](https://img.shields.io/badge/Algorand-000000?style=for-the-badge&logo=algorand&logoColor=white)
-![n8n](https://img.shields.io/badge/n8n-EA4B71?style=for-the-badge&logo=n8n&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![n8n Community Node](https://img.shields.io/badge/n8n-Community%20Node-blue)
 ![License](https://img.shields.io/badge/license-BSL--1.1-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)
+![Algorand](https://img.shields.io/badge/Algorand-Blockchain-00D4AA)
+![API Version](https://img.shields.io/badge/Algorand%20API-v2-green)
+![Network Support](https://img.shields.io/badge/Networks-MainNet%2FTestNet-orange)
 
 ## Features
 
-- 🔐 **Account Management** - Generate accounts, check balances, rekey accounts
-- 💸 **Transactions** - Send ALGO, build/sign/submit transactions
-- 🪙 **ASA Operations** - Create, transfer, freeze, clawback tokens
-- 🎨 **NFT Support** - Create and manage ARC-3/ARC-69 NFTs
-- 📜 **Smart Contracts** - Deploy, call, and manage applications
-- 🔍 **Indexer Queries** - Search transactions, accounts, assets
-- ⏰ **Trigger Node** - React to blockchain events in real-time
-- 🛠️ **Utilities** - Unit conversion, address validation, TEAL compilation
+- **Account Management** - Query account information, balances, and transaction history
+- **Transaction Processing** - Submit, query, and monitor Algorand transactions 
+- **Asset Operations** - Create, transfer, and manage Algorand Standard Assets (ASAs)
+- **Smart Contract Integration** - Deploy and interact with Algorand applications
+- **Block Explorer** - Retrieve block data and network information
+- **Network Status** - Monitor node health and network parameters
+- **Multi-Network Support** - Works with MainNet, TestNet, and custom networks
+- **Real-time Monitoring** - Track blockchain events and status changes
 
 ## Installation
 
 ### Community Nodes (Recommended)
 
-1. Open your n8n instance
+1. Open n8n
 2. Go to **Settings** → **Community Nodes**
 3. Click **Install a community node**
 4. Enter `n8n-nodes-algorand`
@@ -39,232 +41,138 @@ A comprehensive n8n community node for interacting with the **Algorand blockchai
 ### Manual Installation
 
 ```bash
-# Navigate to your n8n installation directory
 cd ~/.n8n
-
-# Install the package
 npm install n8n-nodes-algorand
-
-# Restart n8n
 ```
 
 ### Development Installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/Velocity-BPA/n8n-nodes-algorand.git
 cd n8n-nodes-algorand
-
-# Install dependencies
 npm install
-
-# Build the package
 npm run build
-
-# Link to your local n8n
 mkdir -p ~/.n8n/custom
 ln -s $(pwd) ~/.n8n/custom/n8n-nodes-algorand
-
-# Restart n8n
+n8n start
 ```
 
 ## Credentials Setup
 
-### Algorand Network Credentials
-
-| Field | Description |
-|-------|-------------|
-| Network | Mainnet, Testnet, Betanet, or Custom |
-| API Provider | AlgoNode (free), PureStake, or Custom |
-| Mnemonic | Your 25-word recovery phrase (for signing) |
-
-**API Providers:**
-
-- **AlgoNode** (Recommended): Free public API, no key required
-- **PureStake**: Requires API key from [developer.purestake.io](https://developer.purestake.io)
-- **Custom**: Your own Algod/Indexer endpoints
+| Field | Description | Required |
+|-------|-------------|----------|
+| API Token | Algorand API access token for authenticated requests | Yes |
+| Server URL | Algorand node URL (e.g., https://mainnet-api.algonode.cloud) | Yes |
+| Port | API port number (default: 443 for HTTPS) | No |
+| Network | Target network (MainNet, TestNet, or Custom) | Yes |
 
 ## Resources & Operations
 
-### Account Operations
-- Generate Account - Create new Algorand account
-- Get Balance - Check ALGO balance
-- Get Info - Detailed account information
-- Get Assets - List ASA holdings
-- Get Applications - List opted-in apps
-- Get Transactions - Account transaction history
-- Validate Address - Check address validity
-- Rekey Account - Change authorized signer
+### 1. Accounts
 
-### Transaction Operations
-- Send ALGO - Payment transactions
-- Get Transaction - Transaction details by ID
-- Get Pending - Pending transaction info
-- Wait for Confirmation - Wait for finality
-- Get Suggested Params - Current network parameters
-- Simulate - Test transactions without submitting
+| Operation | Description |
+|-----------|-------------|
+| Get Account Info | Retrieve account details, balance, and status |
+| List Transactions | Get transaction history for an account |
+| Get Assets | List assets owned by an account |
+| Get Applications | Retrieve applications created or opted-into by account |
 
-### ASA Operations
-- Create Asset - Create new ASA
-- Get Asset Info - Asset details
-- Transfer - Send ASA tokens
-- Opt In - Enable ASA receiving
-- Opt Out - Remove ASA from account
-- Freeze/Unfreeze - Control asset transfers
-- Clawback - Reclaim assets
-- Destroy - Delete assets
-- Search Assets - Find assets
-- Get Holders - List asset holders
+### 2. Transactions
 
-### NFT Operations (ARC-3/ARC-69)
-- Create ARC-3 NFT - Metadata on IPFS
-- Create ARC-69 NFT - Metadata in note field
-- Get NFT Info - NFT details
-- Get Metadata - Fetch NFT metadata
-- Transfer NFT - Send NFTs
-- Verify Standard - Check ARC compliance
+| Operation | Description |
+|-----------|-------------|
+| Get Transaction | Retrieve transaction details by ID |
+| Submit Transaction | Send a signed transaction to the network |
+| Get Pending | List pending transactions in the pool |
+| Search Transactions | Query transactions with filters |
+| Wait for Confirmation | Poll for transaction confirmation |
 
-### Application Operations
-- Get App Info - Application details
-- Get Global State - Read global state
-- Get Local State - Read account's local state
-- Call App - Execute application
-- Opt In - Subscribe to application
-- Close Out - Unsubscribe from application
-- Clear State - Force clear local state
-- Read Box - Access box storage
-- Get Box Names - List all boxes
+### 3. Assets
 
-### Block Operations
-- Get Current Round - Latest block number
-- Get Block - Block information
-- Get Node Status - Network status
-- Wait for Round - Wait for specific block
+| Operation | Description |
+|-----------|-------------|
+| Get Asset Info | Retrieve asset configuration and statistics |
+| Search Assets | Find assets by name, creator, or other criteria |
+| Get Asset Balances | List accounts holding a specific asset |
+| Get Asset Transactions | Retrieve transaction history for an asset |
 
-### Utility Operations
-- ALGO to MicroAlgo - Unit conversion
-- MicroAlgo to ALGO - Unit conversion
-- Validate Address - Check address format
-- Compile TEAL - Compile smart contract code
+### 4. Applications
 
-## Trigger Node
+| Operation | Description |
+|-----------|-------------|
+| Get Application | Retrieve application details and global state |
+| Search Applications | Find applications by creator or other filters |
+| Get Box | Read application box storage |
+| Search Boxes | List all boxes for an application |
 
-The Algorand Trigger node can monitor:
+### 5. Blocks
 
-- **New Block** - Trigger on each new block
-- **Transaction for Address** - Any transaction involving an address
-- **Payment Received** - ALGO payments to an address
-- **Payment Sent** - ALGO payments from an address
-- **Asset Transfer** - ASA transfers for a specific asset
-- **Asset Opt-In** - When accounts opt into an asset
-- **Application Call** - Calls to a specific smart contract
-- **Balance Change** - When an account's balance changes
+| Operation | Description |
+|-----------|-------------|
+| Get Block | Retrieve block details by round number |
+| Get Latest Block | Get the most recent block |
+| Get Block Hash | Retrieve block hash for a specific round |
+| Get Block Transactions | List all transactions in a block |
+
+### 6. Status
+
+| Operation | Description |
+|-----------|-------------|
+| Get Node Status | Retrieve node health and sync status |
+| Get Network Parameters | Get current network configuration |
+| Wait for Block | Wait for a specific block round |
+| Get Supply | Retrieve current ALGO supply information |
 
 ## Usage Examples
 
-### Send ALGO Payment
+```javascript
+// Get account information
+const accountInfo = {
+  "operation": "getAccountInfo",
+  "address": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "include_all": true
+};
 
-```json
-{
-  "resource": "transaction",
-  "operation": "sendAlgo",
-  "toAddress": "RECIPIENT_ADDRESS",
-  "amount": 1.5,
-  "note": "Payment for services"
-}
+// Submit a payment transaction
+const paymentTx = {
+  "operation": "submitTransaction", 
+  "signed_txn": "gqNzaWfEQE...",
+  "wait_for_confirmation": true
+};
+
+// Search for assets by name
+const assetSearch = {
+  "operation": "searchAssets",
+  "name": "MyToken",
+  "limit": 10
+};
+
+// Get latest block information
+const latestBlock = {
+  "operation": "getLatestBlock",
+  "format": "json"
+};
 ```
-
-### Create an ASA Token
-
-```json
-{
-  "resource": "asa",
-  "operation": "createAsset",
-  "assetName": "My Token",
-  "unitName": "MTK",
-  "total": 1000000,
-  "decimals": 6
-}
-```
-
-### Create an ARC-3 NFT
-
-```json
-{
-  "resource": "nft",
-  "operation": "createArc3",
-  "nftName": "My NFT",
-  "unitName": "MNFT",
-  "metadataUrl": "ipfs://QmYourMetadataHash#arc3"
-}
-```
-
-## Algorand Concepts
-
-### Units
-- 1 ALGO = 1,000,000 microAlgos
-- All on-chain amounts are in microAlgos
-
-### Minimum Balance
-- Base: 0.1 ALGO per account
-- +0.1 ALGO per ASA opted-in
-- +0.1 ALGO per app opted-in
-
-### Transaction Finality
-- ~4 seconds per block
-- Transactions are final once confirmed
-
-### NFT Standards
-- **ARC-3**: Metadata stored on IPFS/URL
-- **ARC-69**: Metadata in transaction note
-- **ARC-19**: Mutable metadata via reserve address
-
-## Networks
-
-| Network | Description | AlgoNode URL |
-|---------|-------------|--------------|
-| Mainnet | Production network | mainnet-api.algonode.cloud |
-| Testnet | Test network | testnet-api.algonode.cloud |
-| Betanet | Beta features | betanet-api.algonode.cloud |
 
 ## Error Handling
 
-All operations include comprehensive error handling:
-- Invalid address validation
-- Insufficient balance checks
-- Transaction failure recovery
-- Network timeout handling
-
-## Security Best Practices
-
-1. **Never share mnemonics** - Store securely in n8n credentials
-2. **Use testnet first** - Test all workflows before mainnet
-3. **Validate addresses** - Always validate before sending
-4. **Monitor balances** - Ensure sufficient funds for fees
+| Error | Description | Solution |
+|-------|-------------|----------|
+| 400 Bad Request | Invalid parameters or malformed request | Check parameter format and required fields |
+| 401 Unauthorized | Invalid or missing API token | Verify API token in credentials |
+| 404 Not Found | Resource (account, transaction, etc.) not found | Confirm the resource exists on the network |
+| 429 Rate Limited | Too many API requests | Implement delays between requests |
+| 500 Internal Error | Node or network issue | Check node status and try alternative endpoint |
+| Network Timeout | Connection timeout to Algorand node | Verify node URL and network connectivity |
 
 ## Development
 
 ```bash
-# Install dependencies
 npm install
-
-# Build
 npm run build
-
-# Watch mode
-npm run dev
-
-# Lint
-npm run lint
-
-# Fix lint issues
-npm run lint:fix
-
-# Run tests
 npm test
-
-# Test with coverage
-npm run test:coverage
+npm run lint
+npm run dev
 ```
 
 ## Author
@@ -281,33 +189,24 @@ This n8n community node is licensed under the **Business Source License 1.1**.
 Permitted for personal, educational, research, and internal business use.
 
 ### Commercial Use
-Use of this node within any SaaS, PaaS, hosted platform, managed service,
-or paid automation offering requires a commercial license.
+Use of this node within any SaaS, PaaS, hosted platform, managed service, or paid automation offering requires a commercial license.
 
-For licensing inquiries:
-**licensing@velobpa.com**
+For licensing inquiries: **licensing@velobpa.com**
 
 See [LICENSE](LICENSE), [COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md), and [LICENSING_FAQ.md](LICENSING_FAQ.md) for details.
 
 ## Contributing
 
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Submit a pull request
+Contributions are welcome! Please ensure:
+
+1. Code follows existing style conventions
+2. All tests pass (`npm test`)
+3. Linting passes (`npm run lint`)
+4. Documentation is updated for new features
+5. Commit messages are descriptive
 
 ## Support
 
-- 📖 [Documentation](https://github.com/Velocity-BPA/n8n-nodes-algorand/wiki)
-- 🐛 [Issues](https://github.com/Velocity-BPA/n8n-nodes-algorand/issues)
-- 💬 [Discussions](https://github.com/Velocity-BPA/n8n-nodes-algorand/discussions)
-
-## Acknowledgments
-
-- [Algorand Foundation](https://algorand.foundation/) for the blockchain platform
-- [AlgoNode](https://algonode.io/) for free public API access
-- [n8n](https://n8n.io/) for the workflow automation platform
-
----
-
-**Disclaimer**: This package is not officially affiliated with Algorand Foundation or Algorand Inc. Use at your own risk. Always test thoroughly on testnet before using on mainnet.
+- **Issues**: [GitHub Issues](https://github.com/Velocity-BPA/n8n-nodes-algorand/issues)
+- **Algorand API Documentation**: [developer.algorand.org](https://developer.algorand.org/docs/rest-apis/algod/)
+- **Algorand Developer Portal**: [developer.algorand.org](https://developer.algorand.org/)
