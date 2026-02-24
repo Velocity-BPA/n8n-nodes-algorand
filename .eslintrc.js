@@ -1,27 +1,15 @@
+/*
+ * Copyright (c) 2026 Velocity BPA, LLC
+ * Licensed under the Business Source License 1.1
+ */
+
 module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
-  parserOptions: {
-    project: './tsconfig.json',
-    sourceType: 'module',
-    ecmaVersion: 2021,
-  },
-  plugins: ['@typescript-eslint', 'n8n-nodes-base'],
-  extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-  ],
-  env: {
-    node: true,
-    es2021: true,
-  },
+  plugins: ['eslint-plugin-n8n-nodes-base'],
+  extends: ['plugin:n8n-nodes-base/community'],
+  ignorePatterns: ['node_modules/**', 'dist/**'],
   rules: {
-    '@typescript-eslint/no-explicit-any': 'off',
-    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-    '@typescript-eslint/explicit-function-return-type': 'off',
-    '@typescript-eslint/explicit-module-boundary-types': 'off',
-    'no-console': 'warn',
-    'prefer-const': 'error',
+    'n8n-nodes-base/community-package-json-name-still-default': 'off',
   },
-  ignorePatterns: ['dist/', 'node_modules/', '*.js'],
 };
