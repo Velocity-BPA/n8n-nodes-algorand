@@ -41,7 +41,6 @@ export class Algorand implements INodeType {
       },
     ],
     properties: [
-      // Resource selector
       {
         displayName: 'Resource',
         name: 'resource',
@@ -71,11 +70,14 @@ export class Algorand implements INodeType {
           {
             name: 'Status',
             value: 'status',
+          },
+          {
+            name: 'NodeHealth',
+            value: 'nodeHealth',
           }
         ],
         default: 'accounts',
       },
-      // Operation dropdowns per resource
 {
   displayName: 'Operation',
   name: 'operation',
@@ -328,7 +330,44 @@ export class Algorand implements INodeType {
   ],
   default: 'getStatus',
 },
-      // Parameter definitions
+{
+	displayName: 'Operation',
+	name: 'operation',
+	type: 'options',
+	noDataExpression: true,
+	displayOptions: {
+		show: {
+			resource: ['nodeHealth'],
+		},
+	},
+	options: [
+		{
+			name: 'Get Health',
+			value: 'getHealth',
+			description: 'Check node health status',
+			action: 'Get node health status',
+		},
+		{
+			name: 'Get Ready',
+			value: 'getReady',
+			description: 'Check if node is ready to receive requests',
+			action: 'Check if node is ready',
+		},
+		{
+			name: 'Get Metrics',
+			value: 'getMetrics',
+			description: 'Get node metrics',
+			action: 'Get node metrics',
+		},
+		{
+			name: 'Get Versions',
+			value: 'getVersions',
+			description: 'Get version information',
+			action: 'Get version information',
+		},
+	],
+	default: 'getHealth',
+},
 {
   displayName: 'Account ID',
   name: 'accountId',
@@ -1376,6 +1415,8 @@ export class Algorand implements INodeType {
         return [await executeBlocksOperations.call(this, items)];
       case 'status':
         return [await executeStatusOperations.call(this, items)];
+      case 'nodeHealth':
+        return [await executeNodeHealthOperations.call(this, items)];
       default:
         throw new NodeOperationError(this.getNode(), `The resource "${resource}" is not supported`);
     }
@@ -1949,321 +1990,3 @@ async function executeApplicationsOperations(
             url,
             headers: {
               'X-API-Key': credentials.apiKey,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getApplicationLogs': {
-          const applicationId = this.getNodeParameter('applicationId', i) as string;
-          const limit = this.getNodeParameter('limit', i) as number;
-          const maxRound = this.getNodeParameter('maxRound', i) as number;
-          const minRound = this.getNodeParameter('minRound', i) as number;
-          const next = this.getNodeParameter('next', i) as string;
-          const senderAddress = this.getNodeParameter('senderAddress', i) as string;
-          const txid = this.getNodeParameter('txid', i) as string;
-
-          const queryParams: any = {};
-          if (limit) queryParams.limit = limit;
-          if (maxRound) queryParams['max-round'] = maxRound;
-          if (minRound) queryParams['min-round'] = minRound;
-          if (next) queryParams.next = next;
-          if (senderAddress) queryParams['sender-address'] = senderAddress;
-          if (txid) queryParams.txid = txid;
-
-          const queryString = new URLSearchParams(queryParams).toString();
-          const url = `${credentials.baseUrl}/applications/${applicationId}/logs${queryString ? '?' + queryString : ''}`;
-
-          const options: any = {
-            method: 'GET',
-            url,
-            headers: {
-              'X-API-Key': credentials.apiKey,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getApplicationBox': {
-          const applicationId = this.getNodeParameter('applicationId', i) as string;
-          const name = this.getNodeParameter('name', i) as string;
-
-          const queryParams: any = {
-            name: name,
-          };
-
-          const queryString = new URLSearchParams(queryParams).toString();
-          const url = `${credentials.baseUrl}/applications/${applicationId}/box?${queryString}`;
-
-          const options: any = {
-            method: 'GET',
-            url,
-            headers: {
-              'X-API-Key': credentials.apiKey,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getApplicationBoxes': {
-          const applicationId = this.getNodeParameter('applicationId', i) as string;
-          const limit = this.getNodeParameter('limit', i) as number;
-          const next = this.getNodeParameter('next', i) as string;
-
-          const queryParams: any = {};
-          if (limit) queryParams.limit = limit;
-          if (next) queryParams.next = next;
-
-          const queryString = new URLSearchParams(queryParams).toString();
-          const url = `${credentials.baseUrl}/applications/${applicationId}/boxes${queryString ? '?' + queryString : ''}`;
-
-          const options: any = {
-            method: 'GET',
-            url,
-            headers: {
-              'X-API-Key': credentials.apiKey,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        default:
-          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
-      }
-
-      returnData.push({ json: result, pairedItem: { item: i } });
-    } catch (error: any) {
-      if (this.continueOnFail()) {
-        returnData.push({ json: { error: error.message }, pairedItem: { item: i } });
-      } else {
-        throw new NodeApiError(this.getNode(), error);
-      }
-    }
-  }
-
-  return returnData;
-}
-
-async function executeBlocksOperations(
-  this: IExecuteFunctions,
-  items: INodeExecutionData[],
-): Promise<INodeExecutionData[]> {
-  const returnData: INodeExecutionData[] = [];
-  const operation = this.getNodeParameter('operation', 0) as string;
-  const credentials = await this.getCredentials('algorandApi') as any;
-
-  for (let i = 0; i < items.length; i++) {
-    try {
-      let result: any;
-
-      switch (operation) {
-        case 'getBlock': {
-          const roundNumber = this.getNodeParameter('roundNumber', i) as number;
-          const format = this.getNodeParameter('format', i, 'json') as string;
-
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/v2/blocks/${roundNumber}`,
-            headers: {
-              'X-API-Key': credentials.apiKey,
-            },
-            json: format === 'json',
-          };
-
-          if (format === 'msgpack') {
-            options.headers['Accept'] = 'application/msgpack';
-            options.encoding = null;
-          }
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getBlockLogs': {
-          const roundNumber = this.getNodeParameter('roundNumber', i) as number;
-
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/v2/blocks/${roundNumber}/logs`,
-            headers: {
-              'X-API-Key': credentials.apiKey,
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getBlockTransactions': {
-          const roundNumber = this.getNodeParameter('roundNumber', i) as number;
-
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/v2/blocks/${roundNumber}/transactions`,
-            headers: {
-              'X-API-Key': credentials.apiKey,
-            },
-            json: true,
-          };
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        case 'getLedgerSupply': {
-          const round = this.getNodeParameter('round', i, null) as number | null;
-
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/v2/ledger/supply`,
-            headers: {
-              'X-API-Key': credentials.apiKey,
-            },
-            json: true,
-          };
-
-          if (round !== null && round > 0) {
-            options.qs = { round };
-          }
-
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-
-        default:
-          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
-      }
-
-      returnData.push({
-        json: result,
-        pairedItem: { item: i },
-      });
-
-    } catch (error: any) {
-      if (this.continueOnFail()) {
-        returnData.push({
-          json: { error: error.message },
-          pairedItem: { item: i },
-        });
-      } else {
-        if (error.httpCode) {
-          throw new NodeApiError(this.getNode(), error);
-        }
-        throw new NodeOperationError(this.getNode(), error.message);
-      }
-    }
-  }
-
-  return returnData;
-}
-
-async function executeStatusOperations(
-  this: IExecuteFunctions,
-  items: INodeExecutionData[],
-): Promise<INodeExecutionData[]> {
-  const returnData: INodeExecutionData[] = [];
-  const operation = this.getNodeParameter('operation', 0) as string;
-  const credentials = await this.getCredentials('algorandApi') as any;
-
-  for (let i = 0; i < items.length; i++) {
-    try {
-      let result: any;
-      
-      switch (operation) {
-        case 'getStatus': {
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/status`,
-            headers: {
-              'X-API-Key': credentials.apiKey,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-        
-        case 'waitForBlock': {
-          const roundNumber = this.getNodeParameter('roundNumber', i) as number;
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/status/wait-for-block-after/${roundNumber}`,
-            headers: {
-              'X-API-Key': credentials.apiKey,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-            timeout: 30000,
-          };
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-        
-        case 'getHealth': {
-          const options: any = {
-            method: 'GET',
-            url: credentials.baseUrl.replace('/v2', '') + '/health',
-            headers: {
-              'X-API-Key': credentials.apiKey,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-        
-        case 'getSyncStatus': {
-          const options: any = {
-            method: 'GET',
-            url: `${credentials.baseUrl}/ledger/sync`,
-            headers: {
-              'X-API-Key': credentials.apiKey,
-              'Content-Type': 'application/json',
-            },
-            json: true,
-          };
-          result = await this.helpers.httpRequest(options) as any;
-          break;
-        }
-        
-        default:
-          throw new NodeOperationError(this.getNode(), `Unknown operation: ${operation}`);
-      }
-      
-      returnData.push({ json: result, pairedItem: { item: i } });
-    } catch (error: any) {
-      if (this.continueOnFail()) {
-        returnData.push({ 
-          json: { error: error.message }, 
-          pairedItem: { item: i } 
-        });
-      } else {
-        if (error.httpCode) {
-          throw new NodeApiError(this.getNode(), error);
-        }
-        throw new NodeOperationError(this.getNode(), error.message);
-      }
-    }
-  }
-  
-  return returnData;
-}
