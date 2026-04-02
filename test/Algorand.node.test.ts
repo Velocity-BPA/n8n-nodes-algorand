@@ -67,1245 +67,988 @@ describe('Algorand Node', () => {
   });
 
   // Resource-specific tests
-describe('Accounts Resource', () => {
-  let mockExecuteFunctions: any;
+describe('Account Resource', () => {
+	let mockExecuteFunctions: any;
 
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({
+				apiKey: 'test-key',
+				baseUrl: 'https://mainnet-api.algonode.cloud'
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: {
+				httpRequest: jest.fn(),
+				requestWithAuthentication: jest.fn(),
+			},
+		};
+	});
+
+	describe('getAccount operation', () => {
+		it('should get account information successfully', async () => {
+			const mockResponse = {
+				account: {
+					address: 'TESTADDRESS123',
+					amount: 1000000,
+					'amount-without-pending-rewards': 1000000,
+					'min-balance': 100000,
+					'pending-rewards': 0,
+					'reward-base': 456,
+					'rewards': 0,
+					round: 123456,
+					status: 'Online',
+				},
+			};
+
+			mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number) => {
+				switch (param) {
+					case 'operation':
+						return 'getAccount';
+					case 'address':
+						return 'TESTADDRESS123';
+					case 'exclude':
+						return [];
+					case 'format':
+						return 'json';
+					default:
+						return undefined;
+				}
+			});
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const items = [{ json: {} }];
+			const result = await executeAccountOperations.call(mockExecuteFunctions, items);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].json).toEqual(mockResponse);
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'GET',
+				url: 'https://mainnet-api.algonode.cloud/v2/accounts/TESTADDRESS123',
+				qs: {},
+				headers: {
+					'X-API-Key': 'test-key',
+				},
+				json: true,
+			});
+		});
+
+		it('should handle getAccount errors', async () => {
+			mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number) => {
+				switch (param) {
+					case 'operation':
+						return 'getAccount';
+					case 'address':
+						return 'INVALIDADDRESS';
+					case 'exclude':
+						return [];
+					case 'format':
+						return 'json';
+					default:
+						return undefined;
+				}
+			});
+
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Account not found'));
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+
+			const items = [{ json: {} }];
+			const result = await executeAccountOperations.call(mockExecuteFunctions, items);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].json.error).toBe('Account not found');
+		});
+	});
+
+	describe('listAccounts operation', () => {
+		it('should list accounts successfully', async () => {
+			const mockResponse = {
+				accounts: [
+					{
+						address: 'TESTADDRESS1',
+						amount: 1000000,
+					},
+					{
+						address: 'TESTADDRESS2',
+						amount: 2000000,
+					},
+				],
+				'next-token': 'next123',
+			};
+
+			mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number) => {
+				switch (param) {
+					case 'operation':
+						return 'listAccounts';
+					case 'assetId':
+						return 0;
+					case 'authAddr':
+						return '';
+					case 'limit':
+						return 100;
+					case 'next':
+						return '';
+					case 'currencyGreaterThan':
+						return 0;
+					case 'currencyLessThan':
+						return 0;
+					default:
+						return undefined;
+				}
+			});
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const items = [{ json: {} }];
+			const result = await executeAccountOperations.call(mockExecuteFunctions, items);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].json).toEqual(mockResponse);
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'GET',
+				url: 'https://mainnet-api.algonode.cloud/v2/accounts',
+				qs: { limit: 100 },
+				headers: {
+					'X-API-Key': 'test-key',
+				},
+				json: true,
+			});
+		});
+
+		it('should handle listAccounts errors', async () => {
+			mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number) => {
+				switch (param) {
+					case 'operation':
+						return 'listAccounts';
+					default:
+						return 0;
+				}
+			});
+
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API error'));
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+
+			const items = [{ json: {} }];
+			const result = await executeAccountOperations.call(mockExecuteFunctions, items);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].json.error).toBe('API error');
+		});
+	});
+
+	describe('getAccountTransactions operation', () => {
+		it('should get account transactions successfully', async () => {
+			const mockResponse = {
+				transactions: [
+					{
+						id: 'TXN123',
+						'confirmed-round': 123456,
+						'round-time': 1234567890,
+						sender: 'TESTADDRESS123',
+					},
+				],
+				'next-token': 'next456',
+			};
+
+			mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number) => {
+				switch (param) {
+					case 'operation':
+						return 'getAccountTransactions';
+					case 'address':
+						return 'TESTADDRESS123';
+					case 'notePrefix':
+						return '';
+					case 'txType':
+						return '';
+					case 'sigType':
+						return '';
+					case 'afterTime':
+						return '';
+					case 'beforeTime':
+						return '';
+					case 'limit':
+						return 100;
+					case 'next':
+						return '';
+					default:
+						return undefined;
+				}
+			});
+
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+
+			const items = [{ json: {} }];
+			const result = await executeAccountOperations.call(mockExecuteFunctions, items);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].json).toEqual(mockResponse);
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'GET',
+				url: 'https://mainnet-api.algonode.cloud/v2/accounts/TESTADDRESS123/transactions',
+				qs: { limit: 100 },
+				headers: {
+					'X-API-Key': 'test-key',
+				},
+				json: true,
+			});
+		});
+
+		it('should handle getAccountTransactions errors', async () => {
+			mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number) => {
+				switch (param) {
+					case 'operation':
+						return 'getAccountTransactions';
+					case 'address':
+						return 'INVALIDADDRESS';
+					default:
+						return '';
+				}
+			});
+
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Invalid address'));
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+
+			const items = [{ json: {} }];
+			const result = await executeAccountOperations.call(mockExecuteFunctions, items);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].json.error).toBe('Invalid address');
+		});
+	});
+});
+
+describe('Transaction Resource', () => {
+  let mockExecuteFunctions: any;
+  
   beforeEach(() => {
     mockExecuteFunctions = {
       getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://mainnet-api.algonode.io/v2',
+      getCredentials: jest.fn().mockResolvedValue({ 
+        apiKey: 'test-api-key', 
+        baseUrl: 'https://mainnet-api.algonode.cloud' 
       }),
       getInputData: jest.fn().mockReturnValue([{ json: {} }]),
       getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
       continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
+      helpers: { 
         httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
+        requestWithAuthentication: jest.fn() 
       },
     };
   });
 
-  describe('getAccount operation', () => {
-    it('should retrieve account information successfully', async () => {
-      const mockAccountData = {
-        address: 'TESTACCOUNTADDRESS',
-        amount: 1000000,
-        assets: [],
-      };
+  test('listTransactions should make correct API call', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('listTransactions')
+      .mockReturnValueOnce('')
+      .mockReturnValueOnce('')
+      .mockReturnValueOnce('')
+      .mockReturnValueOnce('')
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(100)
+      .mockReturnValueOnce('')
+      .mockReturnValueOnce('')
+      .mockReturnValueOnce('');
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number, defaultValue?: any) => {
-        switch (param) {
-          case 'operation': return 'getAccount';
-          case 'accountId': return 'TESTACCOUNTADDRESS';
-          case 'includeAll': return false;
-          case 'exclude': return '';
-          default: return defaultValue;
-        }
-      });
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({ transactions: [] });
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockAccountData);
+    const result = await executeTransactionOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      const result = await executeAccountsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockAccountData);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/accounts/TESTACCOUNTADDRESS',
-        headers: { 'X-API-Key': 'test-api-key' },
-        json: true,
-      });
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+      method: 'GET',
+      url: 'https://mainnet-api.algonode.cloud/v2/transactions?limit=100',
+      headers: { 'X-API-Key': 'test-api-key' },
+      json: true,
     });
-
-    it('should handle API errors gracefully', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number, defaultValue?: any) => {
-        switch (param) {
-          case 'operation': return 'getAccount';
-          case 'accountId': return 'INVALID';
-          default: return defaultValue;
-        }
-      });
-
-      const apiError = new Error('Account not found');
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(apiError);
-      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-
-      const result = await executeAccountsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json.error).toBe('Account not found');
-    });
+    expect(result).toEqual([{ json: { transactions: [] }, pairedItem: { item: 0 } }]);
   });
 
-  describe('getAccounts operation', () => {
-    it('should search accounts successfully', async () => {
-      const mockAccountsData = {
-        accounts: [
-          { address: 'ACCOUNT1', amount: 1000000 },
-          { address: 'ACCOUNT2', amount: 2000000 },
-        ],
-      };
+  test('getPendingTransactions should make correct API call', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getPendingTransactions')
+      .mockReturnValueOnce('ALGORAND_ADDRESS_123')
+      .mockReturnValueOnce(50)
+      .mockReturnValueOnce('json');
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number, defaultValue?: any) => {
-        switch (param) {
-          case 'operation': return 'getAccounts';
-          case 'limit': return 10;
-          default: return defaultValue || 0 || '';
-        }
-      });
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({ 'top-transactions': [] });
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockAccountsData);
+    const result = await executeTransactionOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      const result = await executeAccountsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockAccountsData);
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+      method: 'GET',
+      url: 'https://mainnet-api.algonode.cloud/v2/transactions/pending?address=ALGORAND_ADDRESS_123&max=50',
+      headers: { 'X-API-Key': 'test-api-key' },
+      json: true,
     });
+    expect(result).toEqual([{ json: { 'top-transactions': [] }, pairedItem: { item: 0 } }]);
   });
 
-  describe('getAccountTransactions operation', () => {
-    it('should retrieve account transactions successfully', async () => {
-      const mockTransactionsData = {
-        transactions: [
-          { id: 'TXN1', type: 'pay', amount: 100000 },
-          { id: 'TXN2', type: 'axfer', amount: 50000 },
-        ],
-      };
+  test('getTransaction should make correct API call', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('getTransaction')
+      .mockReturnValueOnce('TRANSACTION_ID_123')
+      .mockReturnValueOnce('json');
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number, defaultValue?: any) => {
-        switch (param) {
-          case 'operation': return 'getAccountTransactions';
-          case 'accountId': return 'TESTACCOUNTADDRESS';
-          case 'limit': return 100;
-          default: return defaultValue || 0 || '';
-        }
-      });
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({ transaction: {} });
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockTransactionsData);
+    const result = await executeTransactionOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      const result = await executeAccountsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockTransactionsData);
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+      method: 'GET',
+      url: 'https://mainnet-api.algonode.cloud/v2/transactions/TRANSACTION_ID_123',
+      headers: { 'X-API-Key': 'test-api-key' },
+      json: true,
     });
+    expect(result).toEqual([{ json: { transaction: {} }, pairedItem: { item: 0 } }]);
   });
 
-  describe('getAccountAssets operation', () => {
-    it('should retrieve account assets successfully', async () => {
-      const mockAssetsData = {
-        assets: [
-          { 'asset-id': 123, amount: 1000 },
-          { 'asset-id': 456, amount: 2000 },
-        ],
-      };
+  test('submitTransaction should make correct API call', async () => {
+    mockExecuteFunctions.getNodeParameter
+      .mockReturnValueOnce('submitTransaction')
+      .mockReturnValueOnce('base64encodedtransaction');
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number, defaultValue?: any) => {
-        switch (param) {
-          case 'operation': return 'getAccountAssets';
-          case 'accountId': return 'TESTACCOUNTADDRESS';
-          case 'limit': return 100;
-          case 'includeAll': return false;
-          default: return defaultValue || 0 || '';
-        }
-      });
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({ txId: 'SUBMITTED_TX_ID' });
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockAssetsData);
+    const result = await executeTransactionOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      const result = await executeAccountsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockAssetsData);
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+      method: 'POST',
+      url: 'https://mainnet-api.algonode.cloud/v2/transactions',
+      headers: { 
+        'X-API-Key': 'test-api-key',
+        'Content-Type': 'application/x-binary'
+      },
+      body: Buffer.from('base64encodedtransaction', 'base64'),
+      json: false,
     });
+    expect(result).toEqual([{ json: { txId: 'SUBMITTED_TX_ID' }, pairedItem: { item: 0 } }]);
   });
 
-  describe('getAccountApplications operation', () => {
-    it('should retrieve account applications successfully', async () => {
-      const mockApplicationsData = {
-        'apps-local-states': [
-          { id: 789, 'key-value': [] },
-          { id: 101112, 'key-value': [] },
-        ],
-      };
+  test('getTransactionParams should make correct API call', async () => {
+    mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('getTransactionParams');
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number, defaultValue?: any) => {
-        switch (param) {
-          case 'operation': return 'getAccountApplications';
-          case 'accountId': return 'TESTACCOUNTADDRESS';
-          case 'limit': return 100;
-          case 'includeAll': return false;
-          default: return defaultValue || 0 || '';
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockApplicationsData);
-
-      const result = await executeAccountsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockApplicationsData);
+    mockExecuteFunctions.helpers.httpRequest.mockResolvedValue({ 
+      'consensus-version': 'v1',
+      'fee': 1000,
+      'genesis-hash': 'hash123',
+      'genesis-id': 'mainnet-v1.0',
+      'last-round': 12345,
+      'min-fee': 1000
     });
+
+    const result = await executeTransactionOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+    expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+      method: 'GET',
+      url: 'https://mainnet-api.algonode.cloud/v2/transactions/params',
+      headers: { 'X-API-Key': 'test-api-key' },
+      json: true,
+    });
+    expect(result[0].json).toHaveProperty('consensus-version');
+  });
+
+  test('should handle errors gracefully when continueOnFail is true', async () => {
+    mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('getTransaction');
+    mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+
+    const result = await executeTransactionOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+    expect(result).toEqual([{ json: { error: 'API Error' }, pairedItem: { item: 0 } }]);
+  });
+
+  test('should throw error when continueOnFail is false', async () => {
+    mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('getTransaction');
+    mockExecuteFunctions.continueOnFail.mockReturnValue(false);
+    mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+
+    await expect(executeTransactionOperations.call(mockExecuteFunctions, [{ json: {} }])).rejects.toThrow('API Error');
   });
 });
 
-describe('Transactions Resource', () => {
-  let mockExecuteFunctions: any;
+describe('Asset Resource', () => {
+	let mockExecuteFunctions: any;
 
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://mainnet-api.algonode.io/v2',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({ 
+				apiKey: 'test-api-key', 
+				baseUrl: 'https://mainnet-api.algonode.cloud/v2' 
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: { 
+				httpRequest: jest.fn(),
+				requestWithAuthentication: jest.fn() 
+			},
+		};
+	});
 
-  describe('submitTransaction', () => {
-    it('should submit a transaction successfully', async () => {
-      const mockResponse = { txId: 'test-tx-id' };
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'submitTransaction';
-        if (param === 'transactionData') return 'dGVzdC10cmFuc2FjdGlvbg==';
-        return undefined;
-      });
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+	describe('listAssets operation', () => {
+		it('should list assets successfully', async () => {
+			const mockResponse = { assets: [{ id: 1, name: 'TestAsset' }] };
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('listAssets')
+				.mockReturnValueOnce(null)
+				.mockReturnValueOnce('')
+				.mockReturnValueOnce('')
+				.mockReturnValueOnce('')
+				.mockReturnValueOnce(100)
+				.mockReturnValueOnce('')
+				.mockReturnValueOnce(false);
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      const result = await executeTransactionsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+			const result = await executeAssetOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'POST',
-        url: 'https://mainnet-api.algonode.io/v2/transactions',
-        headers: {
-          'X-API-Key': 'test-api-key',
-          'Content-Type': 'application/x-binary',
-        },
-        body: expect.any(Buffer),
-        json: false,
-      });
-    });
-  });
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
 
-  describe('getPendingTransactions', () => {
-    it('should get pending transactions successfully', async () => {
-      const mockResponse = { transactions: [] };
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getPendingTransactions';
-        if (param === 'format') return 'json';
-        if (param === 'max') return 50;
-        if (param === 'truncate') return false;
-        return undefined;
-      });
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+		it('should handle listAssets error', async () => {
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('listAssets');
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
 
-      const result = await executeTransactionsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+			const result = await executeAssetOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-    });
-  });
+			expect(result).toEqual([{ json: { error: 'API Error' }, pairedItem: { item: 0 } }]);
+		});
+	});
 
-  describe('getTransaction', () => {
-    it('should get a transaction by ID successfully', async () => {
-      const mockResponse = { transaction: { id: 'test-tx-id' } };
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getTransaction';
-        if (param === 'txid') return 'test-tx-id';
-        if (param === 'format') return 'json';
-        return undefined;
-      });
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+	describe('getAsset operation', () => {
+		it('should get asset successfully', async () => {
+			const mockResponse = { asset: { id: 123, name: 'TestAsset' } };
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getAsset')
+				.mockReturnValueOnce(123)
+				.mockReturnValueOnce(false);
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      const result = await executeTransactionsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+			const result = await executeAssetOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-    });
-  });
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
 
-  describe('getTransactionParams', () => {
-    it('should get transaction parameters successfully', async () => {
-      const mockResponse = { fee: 1000, 'genesis-hash': 'test-hash' };
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getTransactionParams';
-        return undefined;
-      });
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+		it('should handle getAsset error', async () => {
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('getAsset');
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Asset not found'));
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
 
-      const result = await executeTransactionsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+			const result = await executeAssetOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-    });
-  });
+			expect(result).toEqual([{ json: { error: 'Asset not found' }, pairedItem: { item: 0 } }]);
+		});
+	});
 
-  describe('simulateTransaction', () => {
-    it('should simulate a transaction successfully', async () => {
-      const mockResponse = { txn_groups: [] };
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'simulateTransaction';
-        if (param === 'transactionData') return 'dGVzdC10cmFuc2FjdGlvbg==';
-        if (param === 'allowEmptySignatures') return true;
-        if (param === 'allowMoreLogging') return false;
-        return undefined;
-      });
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+	describe('getAssetBalances operation', () => {
+		it('should get asset balances successfully', async () => {
+			const mockResponse = { balances: [{ address: 'ABC123', amount: 1000 }] };
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getAssetBalances')
+				.mockReturnValueOnce(123)
+				.mockReturnValueOnce(null)
+				.mockReturnValueOnce(null)
+				.mockReturnValueOnce(100)
+				.mockReturnValueOnce('')
+				.mockReturnValueOnce(false);
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      const result = await executeTransactionsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+			const result = await executeAssetOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-    });
-  });
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
 
-  describe('deletePendingTransaction', () => {
-    it('should delete a pending transaction successfully', async () => {
-      const mockResponse = { success: true };
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'deletePendingTransaction';
-        if (param === 'txid') return 'test-tx-id';
-        return undefined;
-      });
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+		it('should handle getAssetBalances error', async () => {
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('getAssetBalances');
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Balances not found'));
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
 
-      const result = await executeTransactionsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+			const result = await executeAssetOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-    });
-  });
+			expect(result).toEqual([{ json: { error: 'Balances not found' }, pairedItem: { item: 0 } }]);
+		});
+	});
 
-  describe('error handling', () => {
-    it('should handle API errors properly', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getTransactionParams';
-        return undefined;
-      });
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+	describe('getAssetTransactions operation', () => {
+		it('should get asset transactions successfully', async () => {
+			const mockResponse = { transactions: [{ id: 'TXN123', type: 'axfer' }] };
+			mockExecuteFunctions.getNodeParameter
+				.mockReturnValueOnce('getAssetTransactions')
+				.mockReturnValueOnce(123)
+				.mockReturnValueOnce('')
+				.mockReturnValueOnce('')
+				.mockReturnValueOnce('')
+				.mockReturnValueOnce('')
+				.mockReturnValueOnce('')
+				.mockReturnValueOnce(false)
+				.mockReturnValueOnce('')
+				.mockReturnValueOnce('')
+				.mockReturnValueOnce(100)
+				.mockReturnValueOnce('');
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      await expect(
-        executeTransactionsOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow();
-    });
+			const result = await executeAssetOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-    it('should continue on fail when configured', async () => {
-      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getTransactionParams';
-        return undefined;
-      });
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
 
-      const result = await executeTransactionsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+		it('should handle getAssetTransactions error', async () => {
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('getAssetTransactions');
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Transactions not found'));
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].json.error).toBe('API Error');
-    });
-  });
+			const result = await executeAssetOperations.call(mockExecuteFunctions, [{ json: {} }]);
+
+			expect(result).toEqual([{ json: { error: 'Transactions not found' }, pairedItem: { item: 0 } }]);
+		});
+	});
 });
 
-describe('Assets Resource', () => {
-  let mockExecuteFunctions: any;
+describe('Application Resource', () => {
+	let mockExecuteFunctions: any;
 
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://mainnet-api.algonode.io/v2',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({
+				apiKey: 'test-key',
+				baseUrl: 'https://mainnet-api.algonode.cloud',
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: {
+				httpRequest: jest.fn(),
+				requestWithAuthentication: jest.fn(),
+			},
+		};
+	});
 
-  describe('getAssets', () => {
-    it('should get assets list successfully', async () => {
-      const mockResponse = {
-        assets: [
-          {
-            index: 123456,
-            params: {
-              name: 'Test Asset',
-              'unit-name': 'TST',
-              total: 1000000,
-            },
-          },
-        ],
-      };
+	it('should list applications successfully', async () => {
+		mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+			switch (param) {
+				case 'operation': return 'listApplications';
+				case 'limit': return 100;
+				default: return '';
+			}
+		});
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number, defaultValue?: any) => {
-        const params: any = {
-          operation: 'getAssets',
-          limit: 100,
-          includeAll: false,
-          assetId: '',
-          creator: '',
-          name: '',
-          unit: '',
-          next: '',
-        };
-        return params[param] !== undefined ? params[param] : defaultValue;
-      });
+		const mockResponse = { applications: [] };
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+		const items = [{ json: {} }];
+		const result = await executeApplicationOperations.call(mockExecuteFunctions, items);
 
-      const result = await executeAssetsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+		expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+			method: 'GET',
+			url: 'https://mainnet-api.algonode.cloud/v2/applications?limit=100',
+			headers: { 'X-API-Key': 'test-key' },
+			json: true,
+		});
+	});
 
-      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/assets',
-        headers: {
-          'X-API-Key': 'test-api-key',
-          'Content-Type': 'application/json',
-        },
-        qs: { limit: 100 },
-        json: true,
-      });
-    });
-  });
+	it('should get application successfully', async () => {
+		mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+			switch (param) {
+				case 'operation': return 'getApplication';
+				case 'applicationId': return '123456';
+				case 'includeAll': return false;
+				default: return '';
+			}
+		});
 
-  describe('getAsset', () => {
-    it('should get specific asset successfully', async () => {
-      const mockResponse = {
-        asset: {
-          index: 123456,
-          params: {
-            name: 'Test Asset',
-            'unit-name': 'TST',
-            total: 1000000,
-          },
-        },
-      };
+		const mockResponse = { id: 123456 };
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number, defaultValue?: any) => {
-        const params: any = {
-          operation: 'getAsset',
-          assetId: '123456',
-          includeAll: false,
-        };
-        return params[param] !== undefined ? params[param] : defaultValue;
-      });
+		const items = [{ json: {} }];
+		const result = await executeApplicationOperations.call(mockExecuteFunctions, items);
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+		expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+			method: 'GET',
+			url: 'https://mainnet-api.algonode.cloud/v2/applications/123456',
+			headers: { 'X-API-Key': 'test-key' },
+			json: true,
+		});
+	});
 
-      const result = await executeAssetsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+	it('should get application logs successfully', async () => {
+		mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+			switch (param) {
+				case 'operation': return 'getApplicationLogs';
+				case 'applicationId': return '123456';
+				case 'limit': return 50;
+				default: return '';
+			}
+		});
 
-      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/assets/123456',
-        headers: {
-          'X-API-Key': 'test-api-key',
-          'Content-Type': 'application/json',
-        },
-        qs: {},
-        json: true,
-      });
-    });
-  });
+		const mockResponse = { logs: [] };
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-  describe('getAssetBalances', () => {
-    it('should get asset balances successfully', async () => {
-      const mockResponse = {
-        balances: [
-          {
-            address: 'ABC123...',
-            amount: 1000,
-          },
-        ],
-      };
+		const items = [{ json: {} }];
+		const result = await executeApplicationOperations.call(mockExecuteFunctions, items);
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number, defaultValue?: any) => {
-        const params: any = {
-          operation: 'getAssetBalances',
-          assetId: '123456',
-          currencyGreaterThan: 0,
-          currencyLessThan: 0,
-          includeAll: false,
-          limit: 100,
-          next: '',
-        };
-        return params[param] !== undefined ? params[param] : defaultValue;
-      });
+		expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+			method: 'GET',
+			url: 'https://mainnet-api.algonode.cloud/v2/applications/123456/logs?limit=50',
+			headers: { 'X-API-Key': 'test-key' },
+			json: true,
+		});
+	});
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+	it('should get application box successfully', async () => {
+		mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+			switch (param) {
+				case 'operation': return 'getApplicationBox';
+				case 'applicationId': return '123456';
+				case 'name': return 'box-name';
+				default: return '';
+			}
+		});
 
-      const result = await executeAssetsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+		const mockResponse = { name: 'box-name', value: 'data' };
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/assets/123456/balances',
-        headers: {
-          'X-API-Key': 'test-api-key',
-          'Content-Type': 'application/json',
-        },
-        qs: { limit: 100 },
-        json: true,
-      });
-    });
-  });
+		const items = [{ json: {} }];
+		const result = await executeApplicationOperations.call(mockExecuteFunctions, items);
 
-  describe('getAssetTransactions', () => {
-    it('should get asset transactions successfully', async () => {
-      const mockResponse = {
-        transactions: [
-          {
-            id: 'ABC123...',
-            'confirmed-round': 12345,
-            'asset-transfer-transaction': {
-              amount: 1000,
-              'asset-id': 123456,
-            },
-          },
-        ],
-      };
+		expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+			method: 'GET',
+			url: 'https://mainnet-api.algonode.cloud/v2/applications/123456/box?name=box-name',
+			headers: { 'X-API-Key': 'test-key' },
+			json: true,
+		});
+	});
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number, defaultValue?: any) => {
-        const params: any = {
-          operation: 'getAssetTransactions',
-          assetId: '123456',
-          address: '',
-          addressRole: '',
-          afterTime: '',
-          beforeTime: '',
-          currencyGreaterThan: 0,
-          limit: 100,
-          next: '',
-          notePrefix: '',
-          rekeyTo: '',
-          round: 0,
-          sigType: '',
-          txType: '',
-          txid: '',
-        };
-        return params[param] !== undefined ? params[param] : defaultValue;
-      });
+	it('should get application boxes successfully', async () => {
+		mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+			switch (param) {
+				case 'operation': return 'getApplicationBoxes';
+				case 'applicationId': return '123456';
+				case 'limit': return 10;
+				default: return '';
+			}
+		});
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+		const mockResponse = { boxes: [] };
+		mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      const result = await executeAssetsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+		const items = [{ json: {} }];
+		const result = await executeApplicationOperations.call(mockExecuteFunctions, items);
 
-      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/assets/123456/transactions',
-        headers: {
-          'X-API-Key': 'test-api-key',
-          'Content-Type': 'application/json',
-        },
-        qs: { limit: 100 },
-        json: true,
-      });
-    });
-  });
+		expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+			method: 'GET',
+			url: 'https://mainnet-api.algonode.cloud/v2/applications/123456/boxes?limit=10',
+			headers: { 'X-API-Key': 'test-key' },
+			json: true,
+		});
+	});
 
-  describe('error handling', () => {
-    it('should handle API errors', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getAsset';
-        if (param === 'assetId') return '123456';
-        return '';
-      });
+	it('should handle errors when continueOnFail is true', async () => {
+		mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+			switch (param) {
+				case 'operation': return 'getApplication';
+				case 'applicationId': return '123456';
+				default: return '';
+			}
+		});
+		mockExecuteFunctions.continueOnFail.mockReturnValue(true);
+		mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
 
-      const apiError = new Error('Asset not found');
-      (apiError as any).httpCode = 404;
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(apiError);
+		const items = [{ json: {} }];
+		const result = await executeApplicationOperations.call(mockExecuteFunctions, items);
 
-      await expect(executeAssetsOperations.call(mockExecuteFunctions, [{ json: {} }]))
-        .rejects.toThrow('Asset not found');
-    });
+		expect(result).toEqual([{ json: { error: 'API Error' }, pairedItem: { item: 0 } }]);
+	});
 
-    it('should continue on fail when configured', async () => {
-      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getAsset';
-        if (param === 'assetId') return '123456';
-        return '';
-      });
+	it('should throw error when continueOnFail is false', async () => {
+		mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
+			switch (param) {
+				case 'operation': return 'getApplication';
+				case 'applicationId': return '123456';
+				default: return '';
+			}
+		});
+		mockExecuteFunctions.continueOnFail.mockReturnValue(false);
+		mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
 
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
+		const items = [{ json: {} }];
 
-      const result = await executeAssetsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toEqual([
-        { json: { error: 'API Error' }, pairedItem: { item: 0 } }
-      ]);
-    });
-  });
+		await expect(executeApplicationOperations.call(mockExecuteFunctions, items)).rejects.toThrow('API Error');
+	});
 });
 
-describe('Applications Resource', () => {
-  let mockExecuteFunctions: any;
+describe('Block Resource', () => {
+	let mockExecuteFunctions: any;
 
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://mainnet-api.algonode.io/v2',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({ 
+				apiKey: 'test-key', 
+				baseUrl: 'https://mainnet-api.algonode.cloud' 
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: { 
+				httpRequest: jest.fn(),
+				requestWithAuthentication: jest.fn() 
+			},
+		};
+	});
 
-  describe('getApplications', () => {
-    it('should successfully get applications', async () => {
-      const mockResponse = {
-        applications: [
-          { id: 123, 'created-at-round': 1000 },
-          { id: 456, 'created-at-round': 2000 },
-        ],
-      };
+	describe('getBlock operation', () => {
+		it('should get block information successfully', async () => {
+			const mockResponse = { block: { round: 123, transactions: [] } };
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('getBlock');
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce(123);
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('json');
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation':
-            return 'getApplications';
-          case 'applicationIdFilter':
-            return '';
-          case 'creator':
-            return '';
-          case 'includeAll':
-            return false;
-          case 'limit':
-            return 100;
-          case 'next':
-            return '';
-          default:
-            return undefined;
-        }
-      });
+			const result = await executeBlockOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'GET',
+				url: 'https://mainnet-api.algonode.cloud/v2/blocks/123',
+				headers: { 'X-API-Key': 'test-key' },
+				json: true,
+			});
+		});
 
-      const result = await executeApplicationsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+		it('should handle error when getting block fails', async () => {
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('getBlock');
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce(123);
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('json');
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Block not found'));
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
 
-      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/applications?limit=100',
-        headers: {
-          'X-API-Key': 'test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-  });
+			const result = await executeBlockOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-  describe('getApplication', () => {
-    it('should successfully get a specific application', async () => {
-      const mockResponse = {
-        application: {
-          id: 123,
-          'created-at-round': 1000,
-          params: { creator: 'ABCD...' },
-        },
-      };
+			expect(result).toEqual([{ json: { error: 'Block not found' }, pairedItem: { item: 0 } }]);
+		});
+	});
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation':
-            return 'getApplication';
-          case 'applicationId':
-            return '123';
-          case 'includeAll':
-            return false;
-          default:
-            return undefined;
-        }
-      });
+	describe('getStatus operation', () => {
+		it('should get node status successfully', async () => {
+			const mockResponse = { 'last-round': 12345, 'time-since-last-round': 4000000000 };
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('getStatus');
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+			const result = await executeBlockOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      const result = await executeApplicationsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'GET',
+				url: 'https://mainnet-api.algonode.cloud/v2/status',
+				headers: { 'X-API-Key': 'test-key' },
+				json: true,
+			});
+		});
 
-      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/applications/123',
-        headers: {
-          'X-API-Key': 'test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-  });
+		it('should handle error when getting status fails', async () => {
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('getStatus');
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Service unavailable'));
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
 
-  describe('getApplicationLogs', () => {
-    it('should successfully get application logs', async () => {
-      const mockResponse = {
-        'log-data': [
-          { txid: 'ABC123', logs: ['log1', 'log2'] },
-        ],
-      };
+			const result = await executeBlockOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation':
-            return 'getApplicationLogs';
-          case 'applicationId':
-            return '123';
-          case 'limit':
-            return 50;
-          case 'maxRound':
-            return 0;
-          case 'minRound':
-            return 0;
-          case 'next':
-            return '';
-          case 'senderAddress':
-            return '';
-          case 'txid':
-            return '';
-          default:
-            return undefined;
-        }
-      });
+			expect(result).toEqual([{ json: { error: 'Service unavailable' }, pairedItem: { item: 0 } }]);
+		});
+	});
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
+	describe('waitForBlock operation', () => {
+		it('should wait for block successfully', async () => {
+			const mockResponse = { 'last-round': 12346 };
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('waitForBlock');
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce(12345);
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      const result = await executeApplicationsOperations.call(mockExecuteFunctions, [{ json: {} }]);
+			const result = await executeBlockOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/applications/123/logs?limit=50',
-        headers: {
-          'X-API-Key': 'test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-  });
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'GET',
+				url: 'https://mainnet-api.algonode.cloud/v2/status/wait-for-block-after/12345',
+				headers: { 'X-API-Key': 'test-key' },
+				json: true,
+			});
+		});
+	});
 
-  describe('getApplicationBox', () => {
-    it('should successfully get application box data', async () => {
-      const mockResponse = {
-        name: 'box1',
-        value: 'boxdata123',
-      };
+	describe('getLedgerSupply operation', () => {
+		it('should get ledger supply successfully', async () => {
+			const mockResponse = { 'current_round': 12345, 'total-money': 10000000000 };
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce('getLedgerSupply');
+			mockExecuteFunctions.getNodeParameter.mockReturnValueOnce(0);
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation':
-            return 'getApplicationBox';
-          case 'applicationId':
-            return '123';
-          case 'name':
-            return 'box1';
-          default:
-            return undefined;
-        }
-      });
+			const result = await executeBlockOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeApplicationsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/applications/123/box?name=box1',
-        headers: {
-          'X-API-Key': 'test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('getApplicationBoxes', () => {
-    it('should successfully list application boxes', async () => {
-      const mockResponse = {
-        boxes: [
-          { name: 'box1' },
-          { name: 'box2' },
-        ],
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        switch (paramName) {
-          case 'operation':
-            return 'getApplicationBoxes';
-          case 'applicationId':
-            return '123';
-          case 'limit':
-            return 100;
-          case 'next':
-            return '';
-          default:
-            return undefined;
-        }
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const result = await executeApplicationsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/applications/123/boxes?limit=100',
-        headers: {
-          'X-API-Key': 'test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('error handling', () => {
-    it('should handle API errors properly', async () => {
-      const mockError = new Error('API Error');
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        if (paramName === 'operation') return 'getApplication';
-        if (paramName === 'applicationId') return '123';
-        return undefined;
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(mockError);
-
-      await expect(
-        executeApplicationsOperations.call(mockExecuteFunctions, [{ json: {} }])
-      ).rejects.toThrow();
-    });
-
-    it('should continue on fail when configured', async () => {
-      const mockError = new Error('API Error');
-
-      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-      mockExecuteFunctions.getNodeParameter.mockImplementation((paramName: string) => {
-        if (paramName === 'operation') return 'getApplication';
-        if (paramName === 'applicationId') return '123';
-        return undefined;
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(mockError);
-
-      const result = await executeApplicationsOperations.call(mockExecuteFunctions, [{ json: {} }]);
-
-      expect(result).toEqual([{ json: { error: 'API Error' }, pairedItem: { item: 0 } }]);
-    });
-  });
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'GET',
+				url: 'https://mainnet-api.algonode.cloud/v2/ledger/supply',
+				headers: { 'X-API-Key': 'test-key' },
+				json: true,
+			});
+		});
+	});
 });
 
-describe('Blocks Resource', () => {
-  let mockExecuteFunctions: any;
+describe('NodeHealth Resource', () => {
+	let mockExecuteFunctions: any;
 
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://mainnet-api.algonode.io',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
+	beforeEach(() => {
+		mockExecuteFunctions = {
+			getNodeParameter: jest.fn(),
+			getCredentials: jest.fn().mockResolvedValue({
+				apiKey: 'test-api-key',
+				baseUrl: 'https://mainnet-api.algonode.cloud/v2',
+			}),
+			getInputData: jest.fn().mockReturnValue([{ json: {} }]),
+			getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
+			continueOnFail: jest.fn().mockReturnValue(false),
+			helpers: {
+				httpRequest: jest.fn(),
+				requestWithAuthentication: jest.fn(),
+			},
+		};
+	});
 
-  describe('getBlock operation', () => {
-    it('should get a block by round number successfully', async () => {
-      const mockBlockData = {
-        round: 12345,
-        timestamp: 1640000000,
-        transactions: [],
-      };
+	describe('getHealth operation', () => {
+		it('should get node health status successfully', async () => {
+			const mockResponse = { status: 'healthy' };
+			mockExecuteFunctions.getNodeParameter.mockReturnValue('getHealth');
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string, index: number) => {
-        if (param === 'operation') return 'getBlock';
-        if (param === 'roundNumber') return 12345;
-        if (param === 'format') return 'json';
-        return undefined;
-      });
+			const result = await executeNodeHealthOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockBlockData);
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'GET',
+				url: 'https://mainnet-api.algonode.cloud/v2/health',
+				headers: {
+					'X-API-Key': 'test-api-key',
+				},
+				json: true,
+			});
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
 
-      const items = [{ json: {} }];
-      const result = await executeBlocksOperations.call(mockExecuteFunctions, items);
+		it('should handle getHealth errors', async () => {
+			mockExecuteFunctions.getNodeParameter.mockReturnValue('getHealth');
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Health check failed'));
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
 
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/blocks/12345',
-        headers: {
-          'X-API-Key': 'test-api-key',
-        },
-        json: true,
-      });
+			const result = await executeNodeHealthOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      expect(result).toEqual([{
-        json: mockBlockData,
-        pairedItem: { item: 0 },
-      }]);
-    });
+			expect(result).toEqual([{ json: { error: 'Health check failed' }, pairedItem: { item: 0 } }]);
+		});
+	});
 
-    it('should handle errors when getting block', async () => {
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getBlock';
-        if (param === 'roundNumber') return 99999;
-        if (param === 'format') return 'json';
-        return undefined;
-      });
+	describe('getReady operation', () => {
+		it('should check node readiness successfully', async () => {
+			const mockResponse = { ready: true };
+			mockExecuteFunctions.getNodeParameter.mockReturnValue('getReady');
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Block not found'));
+			const result = await executeNodeHealthOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      const items = [{ json: {} }];
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'GET',
+				url: 'https://mainnet-api.algonode.cloud/v2/ready',
+				headers: {
+					'X-API-Key': 'test-api-key',
+				},
+				json: true,
+			});
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
 
-      await expect(executeBlocksOperations.call(mockExecuteFunctions, items))
-        .rejects.toThrow('Block not found');
-    });
-  });
+		it('should handle getReady errors', async () => {
+			mockExecuteFunctions.getNodeParameter.mockReturnValue('getReady');
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Node not ready'));
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
 
-  describe('getBlockLogs operation', () => {
-    it('should get block logs successfully', async () => {
-      const mockLogsData = {
-        logs: ['log1', 'log2'],
-      };
+			const result = await executeNodeHealthOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getBlockLogs';
-        if (param === 'roundNumber') return 12345;
-        return undefined;
-      });
+			expect(result).toEqual([{ json: { error: 'Node not ready' }, pairedItem: { item: 0 } }]);
+		});
+	});
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockLogsData);
+	describe('getMetrics operation', () => {
+		it('should get node metrics successfully', async () => {
+			const mockResponse = { metrics: { cpu_usage: 45.2, memory_usage: 67.8 } };
+			mockExecuteFunctions.getNodeParameter.mockReturnValue('getMetrics');
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      const items = [{ json: {} }];
-      const result = await executeBlocksOperations.call(mockExecuteFunctions, items);
+			const result = await executeNodeHealthOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/blocks/12345/logs',
-        headers: {
-          'X-API-Key': 'test-api-key',
-        },
-        json: true,
-      });
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'GET',
+				url: 'https://mainnet-api.algonode.cloud/v2/metrics',
+				headers: {
+					'X-API-Key': 'test-api-key',
+				},
+				json: true,
+			});
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
 
-      expect(result).toEqual([{
-        json: mockLogsData,
-        pairedItem: { item: 0 },
-      }]);
-    });
-  });
+		it('should handle getMetrics errors', async () => {
+			mockExecuteFunctions.getNodeParameter.mockReturnValue('getMetrics');
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Metrics unavailable'));
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
 
-  describe('getBlockTransactions operation', () => {
-    it('should get block transactions successfully', async () => {
-      const mockTransactionsData = {
-        transactions: [
-          { id: 'tx1', type: 'pay' },
-          { id: 'tx2', type: 'axfer' },
-        ],
-      };
+			const result = await executeNodeHealthOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getBlockTransactions';
-        if (param === 'roundNumber') return 12345;
-        return undefined;
-      });
+			expect(result).toEqual([{ json: { error: 'Metrics unavailable' }, pairedItem: { item: 0 } }]);
+		});
+	});
 
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockTransactionsData);
+	describe('getVersions operation', () => {
+		it('should get version information successfully', async () => {
+			const mockResponse = { 
+				versions: ['v1', 'v2'], 
+				build: { major: 3, minor: 14, build_number: 0 } 
+			};
+			mockExecuteFunctions.getNodeParameter.mockReturnValue('getVersions');
+			mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
 
-      const items = [{ json: {} }];
-      const result = await executeBlocksOperations.call(mockExecuteFunctions, items);
+			const result = await executeNodeHealthOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/blocks/12345/transactions',
-        headers: {
-          'X-API-Key': 'test-api-key',
-        },
-        json: true,
-      });
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
+				method: 'GET',
+				url: 'https://mainnet-api.algonode.cloud/v2/versions',
+				headers: {
+					'X-API-Key': 'test-api-key',
+				},
+				json: true,
+			});
+			expect(result).toEqual([{ json: mockResponse, pairedItem: { item: 0 } }]);
+		});
 
-      expect(result).toEqual([{
-        json: mockTransactionsData,
-        pairedItem: { item: 0 },
-      }]);
-    });
-  });
+		it('should handle getVersions errors', async () => {
+			mockExecuteFunctions.getNodeParameter.mockReturnValue('getVersions');
+			mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('Version info unavailable'));
+			mockExecuteFunctions.continueOnFail.mockReturnValue(true);
 
-  describe('getLedgerSupply operation', () => {
-    it('should get ledger supply successfully', async () => {
-      const mockSupplyData = {
-        current_round: 25000000,
-        total_money: 10000000000000000,
-        online_money: 6000000000000000,
-      };
+			const result = await executeNodeHealthOperations.call(mockExecuteFunctions, [{ json: {} }]);
 
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getLedgerSupply';
-        if (param === 'round') return null;
-        return undefined;
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockSupplyData);
-
-      const items = [{ json: {} }];
-      const result = await executeBlocksOperations.call(mockExecuteFunctions, items);
-
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/ledger/supply',
-        headers: {
-          'X-API-Key': 'test-api-key',
-        },
-        json: true,
-      });
-
-      expect(result).toEqual([{
-        json: mockSupplyData,
-        pairedItem: { item: 0 },
-      }]);
-    });
-
-    it('should get ledger supply for specific round', async () => {
-      const mockSupplyData = {
-        current_round: 12345,
-        total_money: 10000000000000000,
-        online_money: 6000000000000000,
-      };
-
-      mockExecuteFunctions.getNodeParameter.mockImplementation((param: string) => {
-        if (param === 'operation') return 'getLedgerSupply';
-        if (param === 'round') return 12345;
-        return undefined;
-      });
-
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockSupplyData);
-
-      const items = [{ json: {} }];
-      const result = await executeBlocksOperations.call(mockExecuteFunctions, items);
-
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/ledger/supply',
-        headers: {
-          'X-API-Key': 'test-api-key',
-        },
-        json: true,
-        qs: { round: 12345 },
-      });
-
-      expect(result).toEqual([{
-        json: mockSupplyData,
-        pairedItem: { item: 0 },
-      }]);
-    });
-  });
-});
-
-describe('Status Resource', () => {
-  let mockExecuteFunctions: any;
-
-  beforeEach(() => {
-    mockExecuteFunctions = {
-      getNodeParameter: jest.fn(),
-      getCredentials: jest.fn().mockResolvedValue({
-        apiKey: 'test-api-key',
-        baseUrl: 'https://mainnet-api.algonode.io/v2',
-      }),
-      getInputData: jest.fn().mockReturnValue([{ json: {} }]),
-      getNode: jest.fn().mockReturnValue({ name: 'Test Node' }),
-      continueOnFail: jest.fn().mockReturnValue(false),
-      helpers: {
-        httpRequest: jest.fn(),
-        requestWithAuthentication: jest.fn(),
-      },
-    };
-  });
-
-  describe('getStatus operation', () => {
-    it('should get node status successfully', async () => {
-      const mockResponse = {
-        'last-round': 12345,
-        'last-version': 'v1',
-        'next-version': 'v2',
-        'next-version-round': 12346,
-        'next-version-supported': true,
-        'time-since-last-round': 1000000000,
-      };
-
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('getStatus');
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const items = [{ json: {} }];
-      const result = await executeStatusOperations.call(mockExecuteFunctions, items);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/status',
-        headers: {
-          'X-API-Key': 'test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-
-    it('should handle getStatus errors', async () => {
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('getStatus');
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
-
-      const items = [{ json: {} }];
-      
-      await expect(executeStatusOperations.call(mockExecuteFunctions, items))
-        .rejects.toThrow('API Error');
-    });
-  });
-
-  describe('waitForBlock operation', () => {
-    it('should wait for block successfully', async () => {
-      const mockResponse = {
-        'last-round': 12346,
-        'last-version': 'v1',
-        'next-version': 'v2',
-        'next-version-round': 12347,
-        'next-version-supported': true,
-        'time-since-last-round': 1000000000,
-      };
-
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('waitForBlock')
-        .mockReturnValueOnce(12345);
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const items = [{ json: {} }];
-      const result = await executeStatusOperations.call(mockExecuteFunctions, items);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/status/wait-for-block-after/12345',
-        headers: {
-          'X-API-Key': 'test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-        timeout: 30000,
-      });
-    });
-  });
-
-  describe('getHealth operation', () => {
-    it('should get health status successfully', async () => {
-      const mockResponse = {
-        data: { status: 'ok' },
-        errors: null,
-        message: 'Ready',
-        round: 12345,
-        version: 'v2.1.0',
-      };
-
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('getHealth');
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const items = [{ json: {} }];
-      const result = await executeStatusOperations.call(mockExecuteFunctions, items);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/health',
-        headers: {
-          'X-API-Key': 'test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('getSyncStatus operation', () => {
-    it('should get sync status successfully', async () => {
-      const mockResponse = {
-        'catchup-time': 0,
-        'last-catchpoint': 'string',
-        'last-round': 12345,
-        'last-version': 'v1',
-        'next-version': 'v2',
-        'next-version-round': 12346,
-        'next-version-supported': true,
-        'stopped-at-unsupported-round': false,
-        'time-since-last-round': 1000000000,
-      };
-
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('getSyncStatus');
-      mockExecuteFunctions.helpers.httpRequest.mockResolvedValue(mockResponse);
-
-      const items = [{ json: {} }];
-      const result = await executeStatusOperations.call(mockExecuteFunctions, items);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json).toEqual(mockResponse);
-      expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith({
-        method: 'GET',
-        url: 'https://mainnet-api.algonode.io/v2/ledger/sync',
-        headers: {
-          'X-API-Key': 'test-api-key',
-          'Content-Type': 'application/json',
-        },
-        json: true,
-      });
-    });
-  });
-
-  describe('error handling', () => {
-    it('should continue on fail when configured', async () => {
-      mockExecuteFunctions.continueOnFail.mockReturnValue(true);
-      mockExecuteFunctions.getNodeParameter
-        .mockReturnValueOnce('getStatus');
-      mockExecuteFunctions.helpers.httpRequest.mockRejectedValue(new Error('API Error'));
-
-      const items = [{ json: {} }];
-      const result = await executeStatusOperations.call(mockExecuteFunctions, items);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].json.error).toBe('API Error');
-    });
-  });
+			expect(result).toEqual([{ json: { error: 'Version info unavailable' }, pairedItem: { item: 0 } }]);
+		});
+	});
 });
 });
