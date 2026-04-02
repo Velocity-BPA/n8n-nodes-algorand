@@ -8,25 +8,25 @@
 >
 > For licensing information, visit https://velobpa.com/licensing or contact licensing@velobpa.com.
 
-This n8n community node provides comprehensive integration with the Algorand blockchain, implementing 6 core resources (Accounts, Transactions, Assets, Applications, Blocks, Status) to enable automated workflows for blockchain operations, asset management, smart contract interactions, and network monitoring.
+A comprehensive n8n community node for interacting with the Algorand blockchain ecosystem. This node provides access to 6 core resources including accounts, transactions, assets, applications, blocks, and node health monitoring, enabling seamless integration of Algorand blockchain operations into your n8n workflows.
 
 ![n8n Community Node](https://img.shields.io/badge/n8n-Community%20Node-blue)
 ![License](https://img.shields.io/badge/license-BSL--1.1-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)
-![Algorand](https://img.shields.io/badge/Algorand-Blockchain-00D4AA)
-![API Version](https://img.shields.io/badge/Algorand%20API-v2-green)
-![Network Support](https://img.shields.io/badge/Networks-MainNet%2FTestNet-orange)
+![Algorand](https://img.shields.io/badge/Algorand-Blockchain-green)
+![SDK](https://img.shields.io/badge/Algorand%20SDK-Latest-orange)
+![Web3](https://img.shields.io/badge/Web3-Ready-purple)
 
 ## Features
 
-- **Account Management** - Query account information, balances, and transaction history
-- **Transaction Processing** - Submit, query, and monitor Algorand transactions 
-- **Asset Operations** - Create, transfer, and manage Algorand Standard Assets (ASAs)
-- **Smart Contract Integration** - Deploy and interact with Algorand applications
-- **Block Explorer** - Retrieve block data and network information
-- **Network Status** - Monitor node health and network parameters
-- **Multi-Network Support** - Works with MainNet, TestNet, and custom networks
-- **Real-time Monitoring** - Track blockchain events and status changes
+- **Complete Account Management** - Query account information, balances, assets, and application states
+- **Transaction Operations** - Create, send, search, and monitor Algorand transactions with full parameter support
+- **Asset Management** - Create, configure, transfer, and query Algorand Standard Assets (ASAs)
+- **Application Interaction** - Deploy, call, update, and delete Algorand smart contracts and applications
+- **Block Exploration** - Retrieve block information, transactions, and blockchain state data
+- **Node Health Monitoring** - Check node status, synchronization state, and network health metrics
+- **Multi-Network Support** - Works with MainNet, TestNet, and private Algorand networks
+- **Comprehensive Error Handling** - Detailed error messages and retry mechanisms for blockchain operations
 
 ## Installation
 
@@ -61,109 +61,128 @@ n8n start
 
 | Field | Description | Required |
 |-------|-------------|----------|
-| API Token | Algorand API access token for authenticated requests | Yes |
-| Server URL | Algorand node URL (e.g., https://mainnet-api.algonode.cloud) | Yes |
-| Port | API port number (default: 443 for HTTPS) | No |
-| Network | Target network (MainNet, TestNet, or Custom) | Yes |
+| API Key | Your Algorand node API key or service provider key | Yes |
+| Server URL | Algorand node endpoint (MainNet/TestNet/Custom) | Yes |
+| Port | API port number (default: 443 for HTTPS, 80 for HTTP) | No |
+| Token Header | Custom header name for API key (default: X-API-Key) | No |
 
 ## Resources & Operations
 
-### 1. Accounts
+### 1. Account
 
 | Operation | Description |
 |-----------|-------------|
-| Get Account Info | Retrieve account details, balance, and status |
-| List Transactions | Get transaction history for an account |
-| Get Assets | List assets owned by an account |
-| Get Applications | Retrieve applications created or opted-into by account |
+| Get Account Info | Retrieve account balance, status, and configuration |
+| List Assets | Get all assets owned by an account |
+| List Applications | Get applications created by or opted into by account |
+| Get Transactions | Retrieve transaction history for an account |
 
-### 2. Transactions
+### 2. Transaction
 
 | Operation | Description |
 |-----------|-------------|
+| Send Payment | Send ALGO or asset payment between accounts |
+| Send Asset Transfer | Transfer Algorand Standard Assets (ASAs) |
 | Get Transaction | Retrieve transaction details by ID |
-| Submit Transaction | Send a signed transaction to the network |
-| Get Pending | List pending transactions in the pool |
-| Search Transactions | Query transactions with filters |
-| Wait for Confirmation | Poll for transaction confirmation |
+| Search Transactions | Search transactions with filters and pagination |
+| Get Pending | Check pending transactions in the transaction pool |
 
-### 3. Assets
+### 3. Asset
 
 | Operation | Description |
 |-----------|-------------|
+| Create Asset | Create new Algorand Standard Asset (ASA) |
 | Get Asset Info | Retrieve asset configuration and statistics |
-| Search Assets | Find assets by name, creator, or other criteria |
-| Get Asset Balances | List accounts holding a specific asset |
-| Get Asset Transactions | Retrieve transaction history for an asset |
+| Configure Asset | Modify asset configuration parameters |
+| Destroy Asset | Permanently destroy an asset |
+| Freeze Asset | Freeze/unfreeze asset for specific account |
+| Opt In | Opt account into receiving an asset |
 
-### 4. Applications
-
-| Operation | Description |
-|-----------|-------------|
-| Get Application | Retrieve application details and global state |
-| Search Applications | Find applications by creator or other filters |
-| Get Box | Read application box storage |
-| Search Boxes | List all boxes for an application |
-
-### 5. Blocks
+### 4. Application
 
 | Operation | Description |
 |-----------|-------------|
-| Get Block | Retrieve block details by round number |
+| Create Application | Deploy new smart contract application |
+| Call Application | Execute application with arguments |
+| Update Application | Update existing application code |
+| Delete Application | Remove application from blockchain |
+| Get Application | Retrieve application information and state |
+| Opt In | Opt account into application |
+
+### 5. Block
+
+| Operation | Description |
+|-----------|-------------|
+| Get Block | Retrieve block information by round number |
 | Get Latest Block | Get the most recent block |
-| Get Block Hash | Retrieve block hash for a specific round |
-| Get Block Transactions | List all transactions in a block |
+| Search Blocks | Search blocks within round range |
+| Get Block Transactions | List all transactions in a specific block |
 
-### 6. Status
+### 6. NodeHealth
 
 | Operation | Description |
 |-----------|-------------|
-| Get Node Status | Retrieve node health and sync status |
-| Get Network Parameters | Get current network configuration |
-| Wait for Block | Wait for a specific block round |
-| Get Supply | Retrieve current ALGO supply information |
+| Get Status | Check node synchronization and health status |
+| Get Version | Retrieve node software version information |
+| Get Metrics | Get node performance and network metrics |
+| Check Ready | Verify if node is ready to process transactions |
 
 ## Usage Examples
 
 ```javascript
-// Get account information
-const accountInfo = {
-  "operation": "getAccountInfo",
-  "address": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-  "include_all": true
-};
+// Get account information and balance
+{
+  "resource": "Account",
+  "operation": "Get Account Info",
+  "address": "DPLD3RTSWC5STVBPZL5DIIVE2OC4BSAWTOYBLFN2X6EFLT2ZNF4SMX64UA"
+}
+```
 
-// Submit a payment transaction
-const paymentTx = {
-  "operation": "submitTransaction", 
-  "signed_txn": "gqNzaWfEQE...",
-  "wait_for_confirmation": true
-};
+```javascript
+// Send ALGO payment
+{
+  "resource": "Transaction", 
+  "operation": "Send Payment",
+  "from": "SENDER_ADDRESS_HERE",
+  "to": "RECEIVER_ADDRESS_HERE", 
+  "amount": 1000000,
+  "note": "Payment from n8n workflow"
+}
+```
 
-// Search for assets by name
-const assetSearch = {
-  "operation": "searchAssets",
-  "name": "MyToken",
-  "limit": 10
-};
+```javascript
+// Create new Algorand Standard Asset
+{
+  "resource": "Asset",
+  "operation": "Create Asset", 
+  "creator": "CREATOR_ADDRESS_HERE",
+  "assetName": "MyToken",
+  "unitName": "MTK",
+  "total": 1000000,
+  "decimals": 2,
+  "url": "https://mytoken.com"
+}
+```
 
+```javascript
 // Get latest block information
-const latestBlock = {
-  "operation": "getLatestBlock",
-  "format": "json"
-};
+{
+  "resource": "Block",
+  "operation": "Get Latest Block",
+  "includeTransactions": true
+}
 ```
 
 ## Error Handling
 
 | Error | Description | Solution |
 |-------|-------------|----------|
-| 400 Bad Request | Invalid parameters or malformed request | Check parameter format and required fields |
-| 401 Unauthorized | Invalid or missing API token | Verify API token in credentials |
-| 404 Not Found | Resource (account, transaction, etc.) not found | Confirm the resource exists on the network |
-| 429 Rate Limited | Too many API requests | Implement delays between requests |
-| 500 Internal Error | Node or network issue | Check node status and try alternative endpoint |
-| Network Timeout | Connection timeout to Algorand node | Verify node URL and network connectivity |
+| Invalid API Key | Authentication failed with provided credentials | Verify API key and server URL in credentials |
+| Account Not Found | Specified account address does not exist | Check account address format and ensure account exists |
+| Insufficient Balance | Account lacks funds for transaction | Verify account balance covers amount plus fees |
+| Asset Not Opted In | Account hasn't opted into the specified asset | Execute opt-in operation before asset transfer |
+| Application Not Found | Smart contract application ID is invalid | Verify application exists and ID is correct |
+| Node Unreachable | Cannot connect to Algorand node | Check network connectivity and node status |
 
 ## Development
 
@@ -208,5 +227,5 @@ Contributions are welcome! Please ensure:
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/Velocity-BPA/n8n-nodes-algorand/issues)
-- **Algorand API Documentation**: [developer.algorand.org](https://developer.algorand.org/docs/rest-apis/algod/)
-- **Algorand Developer Portal**: [developer.algorand.org](https://developer.algorand.org/)
+- **Algorand Developer Docs**: [developer.algorand.org](https://developer.algorand.org)
+- **Algorand Community**: [forum.algorand.org](https://forum.algorand.org)
