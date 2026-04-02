@@ -6,8 +6,16 @@ import {
 export class AlgorandApi implements ICredentialType {
 	name = 'algorandApi';
 	displayName = 'Algorand API';
-	documentationUrl = 'https://docs.n8n.io/integrations/builtin/credentials/algorand/';
+	documentationUrl = 'https://developer.algorand.org/docs/rest-apis/algod/';
 	properties: INodeProperties[] = [
+		{
+			displayName: 'API Base URL',
+			name: 'baseUrl',
+			type: 'string',
+			default: 'https://mainnet-api.algonode.cloud/v2',
+			required: true,
+			description: 'The base URL for the Algorand API endpoint',
+		},
 		{
 			displayName: 'API Key',
 			name: 'apiKey',
@@ -16,40 +24,14 @@ export class AlgorandApi implements ICredentialType {
 				password: true,
 			},
 			default: '',
-			description: 'API key for authentication with Algorand node services',
+			description: 'API key for authentication (optional for public endpoints, required for higher rate limits)',
 		},
 		{
-			displayName: 'Base URL',
-			name: 'baseUrl',
+			displayName: 'API Key Header Name',
+			name: 'apiKeyHeader',
 			type: 'string',
-			default: 'https://mainnet-api.algonode.io/v2',
-			description: 'Base URL for the Algorand API endpoint',
-			placeholder: 'https://mainnet-api.algonode.io/v2',
-		},
-		{
-			displayName: 'Network',
-			name: 'network',
-			type: 'options',
-			options: [
-				{
-					name: 'MainNet',
-					value: 'mainnet',
-				},
-				{
-					name: 'TestNet',
-					value: 'testnet',
-				},
-				{
-					name: 'BetaNet',
-					value: 'betanet',
-				},
-				{
-					name: 'Custom',
-					value: 'custom',
-				},
-			],
-			default: 'mainnet',
-			description: 'The Algorand network to connect to',
+			default: 'X-API-Key',
+			description: 'The header name for the API key (varies by provider)',
 		},
 	];
 }
