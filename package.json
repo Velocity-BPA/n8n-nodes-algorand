@@ -9,7 +9,7 @@
     "blockchain",
     "crypto"
   ],
-  "license": "bsl-catalog",
+  "license": "SEE LICENSE IN LICENSE.md",
   "homepage": "https://github.com/velocity-bpa/n8n-nodes-algorand",
   "author": {
     "name": "Velocity BPA",
@@ -51,7 +51,7 @@
     "eslint-plugin-n8n-nodes-base": "^1.16.1",
     "prettier": "^3.3.2",
     "typescript": "^5.5.3",
-    "n8n-workflow": "*"
+    "n8n-workflow": "1.57.0"
   },
   "peerDependencies": {
     "n8n-workflow": "*"
